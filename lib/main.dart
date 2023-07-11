@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:rflutter_alert/rflutter_alert.dart';
+import 'quizBrain.dart';
+
+QuizBrain quizBrain = QuizBrain();
 
 void main() => runApp(Quizzler());
 
@@ -25,28 +29,70 @@ class QuizPage extends StatefulWidget {
 }
 
 class _QuizPageState extends State<QuizPage> {
-  List<Icon> scoreKeeper = [
-    Icon(
-      Icons.check,
-      color: Colors.green,
-    ),
-    Icon(
-      Icons.close,
-      color: Colors.red,
-    ),
-    Icon(
-      Icons.close,
-      color: Colors.red,
-    ),
-    Icon(
-      Icons.close,
-      color: Colors.red,
-    ),
-    Icon(
-      Icons.close,
-      color: Colors.red,
-    ),
-  ];
+  // Score Indicator for User
+  List<Icon> scoreKeeper = [];
+  int correct = 0;
+  int wrong = 0;
+
+  // Display User's Score after end of quiz
+  void showAlert() {
+    Alert(
+      context: context,
+      title: "QUIZ COMPLETED!",
+      desc: "You have completed the quiz.\n"
+          "Correct Answers: $correct \n"
+          "Wrong Answers: $wrong \n"
+          "Good job!",
+      // type: AlertType.info,
+      buttons: [
+        DialogButton(
+          child: Text(
+            "End of Quiz",
+            style: TextStyle(color: Colors.white, fontSize: 20.0),
+          ),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ],
+    ).show();
+  }
+
+  // Check if user's answer is correct or wrong
+  void checkAnswer(bool userPickedAnswer) {
+    bool correctAnswer =
+        quizBrain.getQuestionAnswer(); // able to access the private quizBrain
+
+    setState(() {
+      // if user is Correct
+      if (userPickedAnswer == correctAnswer) {
+        correct++;
+        scoreKeeper.add(Icon(
+          Icons.check,
+          color: Colors.green,
+        ));
+        print("You are correct!");
+      } else {
+        // if user is wrong
+        wrong++;
+        scoreKeeper.add(Icon(
+          Icons.close,
+          color: Colors.red,
+        ));
+        print("You got it wrong noob. ");
+      }
+
+      // Check if User has reach the end of quiz
+      if (quizBrain.isFinished() == true) {
+        showAlert();
+        quizBrain.reset();
+        scoreKeeper.clear();
+        correct = 0;
+        wrong = 0;
+      } else {
+        // After user answered, move on to the next question
+        quizBrain.nextQuestion();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +106,8 @@ class _QuizPageState extends State<QuizPage> {
             padding: EdgeInsets.all(10.0),
             child: Center(
               child: Text(
-                'This is where the question text will go.',
+                quizBrain
+                    .getQuestionText(), // able to access the private quizBrain
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 25.0,
@@ -70,17 +117,14 @@ class _QuizPageState extends State<QuizPage> {
             ),
           ),
         ),
+
+        // USER PICKED TRUE
         Expanded(
           child: Padding(
             padding: EdgeInsets.all(15.0),
             child: TextButton(
               onPressed: () {
-                setState(() {
-                  scoreKeeper.add(Icon(
-                    Icons.check,
-                    color: Colors.green,
-                  ));
-                });
+                checkAnswer(true);
               },
               style: TextButton.styleFrom(
                 backgroundColor: Colors.green, // Background Color
@@ -95,11 +139,15 @@ class _QuizPageState extends State<QuizPage> {
             ),
           ),
         ),
+
+        // USER PICKED FALSE
         Expanded(
           child: Padding(
             padding: EdgeInsets.all(15.0),
             child: TextButton(
-              onPressed: () {},
+              onPressed: () {
+                checkAnswer(false);
+              },
               style: TextButton.styleFrom(
                 backgroundColor: Colors.red, // Background Color
               ),
@@ -115,15 +163,9 @@ class _QuizPageState extends State<QuizPage> {
         ),
         //TODO: Add a Row here as your score keeper
         Row(
-          children: [],
+          children: scoreKeeper,
         )
       ],
     );
   }
 }
-
-/*
-question1: 'You can lead a cow down stairs but not up stairs.', false,
-question2: 'Approximately one quarter of human bones are in the feet.', true,
-question3: 'A slug\'s blood is green.', true,
-*/
